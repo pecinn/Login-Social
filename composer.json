@@ -1,0 +1,27 @@
+{
+    "name": "pecinn/login-social",
+    "description": "conhecendo o auth2 login social via facebook",
+    "minimum-stability": "stable",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "João Felipe",
+            "email": "jfelipe7.souza@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "config": {
+        "vendor-dir": "vendor"
+    },
+    "autoload": {
+        "psr-4": {
+            "Source\\": "source/"
+        },
+        "files": [
+            "source/Config.php"
+        ]
+    },
+    "require": {
+        "league/oauth2-facebook": "2.0.*"
+    }
+}
