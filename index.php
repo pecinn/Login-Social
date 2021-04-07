@@ -15,37 +15,52 @@ if(empty($_SESSION["userLogin"])){
         'graphApiVersion'   => FACEBOOK["app_version"],
     ]);
 
-    $authUrl = $facebook->getAuthorizationUrl([
-        "scope" => ["email"]
-    ]);
+    if (!isset($_GET['code'])) {
 
-    $error = filter_input(INPUT_GET,  "error", FILTER_SANITIZE_STRIPPED);
-
-    if($error) {
-        echo "<h4>Voce precisa autorizar para continuar</h4>";
-    } 
-
-    $code = filter_input(INPUT_GET,  'code', FILTER_SANITIZE_STRIPPED);
-
-    if($code) {
-        $token = $facebook->getAccessToken( 'authorization_code', [
-            'code' => $code
+        // If we don't have an authorization code then get one
+        $authUrl = $facebook->getAuthorizationUrl([
+            'scope' => ['email'],
         ]);
-
-        $_SESSION["userLogin"] = $facebook->getResourceOwner($token);
-
-        header("Refresh: 0");
-    }
+        $_SESSION['oauth2state'] = $facebook->getState();
+        
+        echo '<a href="'.$authUrl.'">Log in with Facebook!</a>';
+        exit;
     
+        // Check given state against previously stored one to mitigate CSRF attack
+} elseif (empty($_GET['state']) || ($_GET['state'] !== $_SESSION['oauth2state'])) {
 
-    echo "<a title='FB Login' href='{$authUrl}'> Facebook Login</a>";
+    unset($_SESSION['oauth2state']);
+    echo 'Invalid state.';
+    exit;
 
-
-} else {
-    echo "<h1>User name</h1>";
 }
 
+// Try to get an access token (using the authorization code grant)
+$token = $facebook->getAccessToken('authorization_code', [
+    'code' => $_GET['code']
+]);
 
+try {
 
+    // We got an access token, let's now get the user's details
+    $user = $facebook->getResourceOwner($token);
+
+    // Use these details to create a new profile
+    echo "<img width='120' alt='' src='{$user->getPictureUrl()}'/> <h1>Bem-vindo (a)  {$user->getName()} </h1>";
+
+    echo "<a title='Sair' href='?off=true'>Sair</a>";
+    $off = filter_input(INPUT_GET, "off", FILTER_VALIDATE_BOOLEAN);
+    if($off){
+        unset($_SESSION["userLogin"]);
+        header("Refresh: 0");
+    }
+ 
+} catch (\Exception $e) {
+
+    // Failed to get user details
+    exit('Oh dear...');
+}
+
+}
 ob_end_flush();
 
